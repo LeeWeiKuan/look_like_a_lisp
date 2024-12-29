@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 typedef struct _object{
     enum {NUMB, ATOM, STRG, PRIM, CONS, CLOS, NIL} kind;
@@ -56,12 +57,12 @@ Object* cons(Object* p1, Object* p2){
 }
 
 Object* car(Object *x){
-    assert(x->kind != CONS);
+    assert(x->kind == CONS);
     return x->value.cons.car;
 }
 
 Object* cdr(Object *x){
-    assert(x->kind != CONS);
+    assert(x->kind == CONS);
     return x->value.cons.cdr;
 }
 
@@ -85,7 +86,7 @@ void print(Object* x){
 }
 
 void print_list(Object* x){
-  for (putchar('('); ; putchar(' ')) {
+  for (putchar('['); ; putchar(' ')) {
     print(car(x));
     x = cdr(x);
     if (x->kind == NIL)
@@ -96,17 +97,11 @@ void print_list(Object* x){
       break;
     }
   }
-  putchar(')');
-}
-
-Object Read() {
-    int c = getchar();
-    if (c == EOF) 
-        exit(0);
+  putchar(']');
 }
 
 
-const char s[] = "a---- b c (+ 1 1))";
+const char s[] = "(+ (+ 2 2) (+ 1 1))";
 int s_p = 0;
 char buffer[40];
 int buffer_p;
@@ -150,29 +145,45 @@ int lex_parse()
     return 1;
 }
 
-
-void read_all()
+int is_equal_atom(Object *x, Object *y)
 {
-    printf("hello\n");
+    if (x->kind != y -> kind) return 0;
+    if (x->kind != ATOM) return 0;
+    return strcmp(x->value.atom, y->value.atom) == 0;
+}
+
+
+Object* read_all()
+{
+    Object *list = NULL;
+    Object *head = NULL;
     while(s[s_p]!='\0')
     {
         if (lex_parse()) 
         {
-            // if(buffer[0] == '(')
-            // printf(buffer);
-            // printf("\n");
+            char *copy_str = malloc(strlen(buffer)+1);
+            strcpy(copy_str, buffer);
+            Object *new_obj = atom(copy_str);
+            Object *new_cons = cons(new_obj, NIL_OBJECT);
+            if (list == NULL){
+                list = new_cons;
+                head = list;
+            }
+            else
+            {
+                list->value.cons.cdr = new_cons;
+                list = list->value.cons.cdr;
+            }
         }
     }
-    // printf("%d\n", s_p);
+    return head;
 }
 
 int main(int argc, char* argv[])
 {
     NIL_OBJECT = make_nil();
-    Object* o1 = atom("x");
-    Object* o2 = atom("y");
-    Object* o3 = atom("z");
-    Object* p1 = cons((cons(o1, o2)), cons(o2, cons(o3, NIL_OBJECT)));
-    print(p1);
+    Object *p = read_all();
+    print(p);
+    printf("\n");
     return 0;
 }
