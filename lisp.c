@@ -101,7 +101,7 @@ void print_list(Object* x){
 }
 
 
-const char input_str[] = "(+ (+ 2 2) (+ 1 1))";
+const char input_str[] = "(+ (+ 2 2)  (+ 1 1))";
 int input_str_p = 0;
 char buffer[40];
 int buffer_p;
@@ -155,8 +155,8 @@ int is_equal_atom(Object *x, Object *y)
 
 Object* read_all()
 {
-    Object *list = NULL;
-    Object *head = NULL;
+    Object *list = NIL_OBJECT;
+    Object *head = NIL_OBJECT;
     while(input_str[input_str_p]!='\0')
     {
         if (lex_parse()) 
@@ -165,7 +165,7 @@ Object* read_all()
             strcpy(copy_str, buffer);
             Object *new_obj = atom(copy_str);
             Object *new_cons = cons(new_obj, NIL_OBJECT);
-            if (list == NULL){
+            if (list == NIL_OBJECT){
                 list = new_cons;
                 head = list;
             }
@@ -180,9 +180,54 @@ Object* read_all()
 }
 
 
+Object* tokens;
+
+
+Object* get_token()
+{
+    return car(tokens);
+}
+
+void eat_token()
+{
+    tokens = cdr(tokens);
+}
+
+
+Object* parse();
+Object* parse_list()
+{
+    eat_token();
+    Object *list = NIL_OBJECT;
+    Object *p = NIL_OBJECT;
+    while (!is_equal_atom(get_token(), atom(")")))
+    {
+        Object *new_cons = cons(parse(), NIL_OBJECT);
+        if (list == NIL_OBJECT)
+        {
+            p = new_cons;
+            list = p;
+        }
+        else
+        {
+            p->value.cons.cdr = new_cons;
+            p = p->value.cons.cdr;
+        }
+    }
+    eat_token();
+    return list;
+}
+
 Object* parse()
 {
-
+    if (is_equal_atom(get_token(), atom("(")))
+        return parse_list();
+    else
+    {
+        Object *r = get_token();
+        eat_token();
+        return r;
+    }
 }
 
 int main(int argc, char* argv[])
@@ -191,5 +236,11 @@ int main(int argc, char* argv[])
     Object *p = read_all();
     print(p);
     printf("\n");
+    printf("parse tree\n");
+    tokens = p;
+    Object *tree = parse();
+    print(tree);
+    printf("\n");
+    printf("done!\n");
     return 0;
 }
