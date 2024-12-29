@@ -179,6 +179,12 @@ Object* read_all()
     return head;
 }
 
+
+Object* parse()
+{
+    
+}
+
 int main(int argc, char* argv[])
 {
     NIL_OBJECT = make_nil();
