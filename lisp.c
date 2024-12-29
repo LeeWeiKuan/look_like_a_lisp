@@ -101,8 +101,8 @@ void print_list(Object* x){
 }
 
 
-const char s[] = "(+ (+ 2 2) (+ 1 1))";
-int s_p = 0;
+const char input_str[] = "(+ (+ 2 2) (+ 1 1))";
+int input_str_p = 0;
 char buffer[40];
 int buffer_p;
 
@@ -112,35 +112,35 @@ int lex_parse()
     buffer_p = 0;
     buffer[buffer_p] = '\0';
     // 第一个格子
-    while(s[s_p] == ' ')s_p++;
-    if (s[s_p] == '\0') return 0;
-    if (s[s_p] == '(') 
+    while(input_str[input_str_p] == ' ')input_str_p++;
+    if (input_str[input_str_p] == '\0') return 0;
+    if (input_str[input_str_p] == '(') 
     {
-        buffer[0] = s[s_p];
+        buffer[0] = input_str[input_str_p];
         buffer[1] = '\0';
-        s_p++;
+        input_str_p++;
         return 1;
     }
-    if (s[s_p] == ')')
+    if (input_str[input_str_p] == ')')
     {
-        buffer[0] = s[s_p];
+        buffer[0] = input_str[input_str_p];
         buffer[1] = '\0';
-        s_p++;
+        input_str_p++;
         return 1;
     }
-    if (s[s_p] == '\'')
+    if (input_str[input_str_p] == '\'')
     {
-        buffer[0] = s[s_p];
+        buffer[0] = input_str[input_str_p];
         buffer[1] = '\0';
-        s_p++;
+        input_str_p++;
         return 1; 
     }
-    while (buffer_p<39 && s[s_p]!=' ' && s[s_p]!='(' && s[s_p] != ')' && s[s_p] != '\'' )
+    while (buffer_p<39 && input_str[input_str_p]!=' ' && input_str[input_str_p]!='(' && input_str[input_str_p] != ')' && input_str[input_str_p] != '\'' )
     {
-        buffer[buffer_p] = s[s_p];
+        buffer[buffer_p] = input_str[input_str_p];
         buffer[buffer_p+1] = '\0';
         buffer_p++;
-        s_p++;
+        input_str_p++;
     }
     return 1;
 }
@@ -157,7 +157,7 @@ Object* read_all()
 {
     Object *list = NULL;
     Object *head = NULL;
-    while(s[s_p]!='\0')
+    while(input_str[input_str_p]!='\0')
     {
         if (lex_parse()) 
         {
@@ -182,7 +182,7 @@ Object* read_all()
 
 Object* parse()
 {
-    
+
 }
 
 int main(int argc, char* argv[])
