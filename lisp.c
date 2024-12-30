@@ -101,6 +101,7 @@ void print_list(Object* x){
 }
 
 
+// step 1
 const char input_str[] = "(+ (+ 2 2)  (+ 1 1))";
 int input_str_p = 0;
 char buffer[40];
@@ -111,7 +112,6 @@ int lex_parse()
 {
     buffer_p = 0;
     buffer[buffer_p] = '\0';
-    // 第一个格子
     while(input_str[input_str_p] == ' ')input_str_p++;
     if (input_str[input_str_p] == '\0') return 0;
     if (input_str[input_str_p] == '(') 
@@ -179,10 +179,8 @@ Object* read_all()
     return head;
 }
 
-
+// step 2
 Object* tokens;
-
-
 Object* get_token()
 {
     return car(tokens);
@@ -230,17 +228,27 @@ Object* parse()
     }
 }
 
+// step 3
+// eval
+Object* eval_list(Object *list)
+{
+    
+}
+
 int main(int argc, char* argv[])
 {
     NIL_OBJECT = make_nil();
+    // step1
     Object *p = read_all();
     print(p);
     printf("\n");
     printf("parse tree\n");
+    // step2
     tokens = p;
     Object *tree = parse();
     print(tree);
     printf("\n");
     printf("done!\n");
+    // step3
     return 0;
 }
