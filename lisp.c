@@ -228,27 +228,107 @@ Object* parse()
     }
 }
 
+Object *g_env;
 // step 3
 // eval
-Object* eval_list(Object *list)
+Object* eval_list(Object *s_list, Object *env)
 {
-    
+    return NIL_OBJECT;  // TODO(LWG)
 }
+
+
+Object* get_value(Object *name, Object *env);
+
+Object* eval_prim(Object *s, Object *env)
+{
+    double number;
+    int result;
+    Object *o = NIL_OBJECT;
+    // parse number;
+    if (sscanf(s->value.atom, "%lf", number)==1)
+    {
+        o = new_object();
+        o->kind = NUMB;
+        o->value.number = number;
+        return o;
+    }
+    // get env value
+    return get_value(s, env);
+}
+
+
+Object* eval(Object *s, Object *env)
+{
+    switch (s->kind)
+    {
+    case CONS:
+        return eval_list(s, env);
+    case PRIM:
+        return eval_prim(s, env);
+    default:
+        return NIL_OBJECT;
+    }
+}
+
+
+void set_value(Object *name, Object *value, Object *env)
+{
+    Object *p = env;
+    // 看一下能不能找到已有的name
+    int is_found = 0;
+    for(p = env; cdr(p) != NIL_OBJECT; p = cdr(p))
+    {
+        Object *item = car(cdr(p));
+        if (strcmp(name->value.atom, car(item)->value.atom) == 0)
+        {
+            item->value.cons.cdr = value;
+            is_found = 1;
+            break;
+        }
+    }
+    if (!is_found)
+    {
+        Object *new_item = cons(name, value);
+        p->value.cons.cdr = cons(new_item, NIL_OBJECT);
+    }
+}
+
+
+Object* get_value(Object *name, Object *env)
+{
+    // env 
+    Object *p;
+    Object *o = NIL_OBJECT;
+    for(p = cdr(env); p != NIL_OBJECT; p = cdr(p))
+    {
+        Object *item = car(p);
+        if (strcmp(name->value.atom, car(item)->value.atom) == 0)
+        {
+            o = cdr(item);
+            break;
+        }
+    }
+    return o;
+}
+
 
 int main(int argc, char* argv[])
 {
+    // init
     NIL_OBJECT = make_nil();
-    // step1
+    g_env = cons(NIL_OBJECT, NIL_OBJECT);
+    // step1 read
     Object *p = read_all();
     print(p);
     printf("\n");
     printf("parse tree\n");
-    // step2
+    // step2 parse
     tokens = p;
     Object *tree = parse();
     print(tree);
     printf("\n");
     printf("done!\n");
-    // step3
+    // step3 eval
+
     return 0;
 }
