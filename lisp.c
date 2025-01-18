@@ -76,13 +76,15 @@ void print(Object* x){
     if (x->kind == NIL) 
         printf("()");
     else if (x->kind == ATOM)
+    {
         printf("%s", x->value.atom);
+    }
     else if (x->kind == NUMB)
         printf("%f", x->value.number);
     else if (x->kind == CONS)
         print_list(x);
     else
-        printf("%p", x);
+        printf("unknown value\n");
 }
 
 void print_list(Object* x){
@@ -102,8 +104,8 @@ void print_list(Object* x){
 
 
 // step 1
-const char input_str[] = "(+ (+ 2 2)  (+ 1 1))";
-int input_str_p = 0;
+const char *g_input_str;
+int g_input_str_p = 0;
 char buffer[40];
 int buffer_p;
 
@@ -112,35 +114,35 @@ int lex_parse()
 {
     buffer_p = 0;
     buffer[buffer_p] = '\0';
-    while(input_str[input_str_p] == ' ')input_str_p++;
-    if (input_str[input_str_p] == '\0') return 0;
-    if (input_str[input_str_p] == '(') 
+    while(g_input_str[g_input_str_p] == ' ')g_input_str_p++;
+    if (g_input_str[g_input_str_p] == '\0') return 0;
+    if (g_input_str[g_input_str_p] == '(') 
     {
-        buffer[0] = input_str[input_str_p];
+        buffer[0] = g_input_str[g_input_str_p];
         buffer[1] = '\0';
-        input_str_p++;
+        g_input_str_p++;
         return 1;
     }
-    if (input_str[input_str_p] == ')')
+    if (g_input_str[g_input_str_p] == ')')
     {
-        buffer[0] = input_str[input_str_p];
+        buffer[0] = g_input_str[g_input_str_p];
         buffer[1] = '\0';
-        input_str_p++;
+        g_input_str_p++;
         return 1;
     }
-    if (input_str[input_str_p] == '\'')
+    if (g_input_str[g_input_str_p] == '\'')
     {
-        buffer[0] = input_str[input_str_p];
+        buffer[0] = g_input_str[g_input_str_p];
         buffer[1] = '\0';
-        input_str_p++;
+        g_input_str_p++;
         return 1; 
     }
-    while (buffer_p<39 && input_str[input_str_p]!=' ' && input_str[input_str_p]!='(' && input_str[input_str_p] != ')' && input_str[input_str_p] != '\'' )
+    while (buffer_p<39 && g_input_str[g_input_str_p]!='\0' && g_input_str[g_input_str_p]!=' ' && g_input_str[g_input_str_p]!='(' && g_input_str[g_input_str_p] != ')' && g_input_str[g_input_str_p] != '\'' )
     {
-        buffer[buffer_p] = input_str[input_str_p];
+        buffer[buffer_p] = g_input_str[g_input_str_p];
         buffer[buffer_p+1] = '\0';
         buffer_p++;
-        input_str_p++;
+        g_input_str_p++;
     }
     return 1;
 }
@@ -153,11 +155,13 @@ int is_equal_atom(Object *x, Object *y)
 }
 
 
-Object* read_all()
+Object* read_all(const char *input_str)
 {
     Object *list = NIL_OBJECT;
     Object *head = NIL_OBJECT;
-    while(input_str[input_str_p]!='\0')
+    g_input_str = input_str;
+    g_input_str_p = 0;
+    while(g_input_str[g_input_str_p]!='\0')
     {
         if (lex_parse()) 
         {
@@ -263,7 +267,7 @@ Object* eval(Object *s, Object *env)
     {
     case CONS:
         return eval_list(s, env);
-    case PRIM:
+    case ATOM:
         return eval_prim(s, env);
     default:
         return NIL_OBJECT;
@@ -312,23 +316,43 @@ Object* get_value(Object *name, Object *env)
 }
 
 
+void define(Object *name, Object *value)
+{
+    set_value(name, value, g_env);
+}
+
+
 int main(int argc, char* argv[])
 {
     // init
     NIL_OBJECT = make_nil();
     g_env = cons(NIL_OBJECT, NIL_OBJECT);
     // step1 read
-    Object *p = read_all();
-    print(p);
-    printf("\n");
-    printf("parse tree\n");
-    // step2 parse
-    tokens = p;
-    Object *tree = parse();
-    print(tree);
-    printf("\n");
-    printf("done!\n");
-    // step3 eval
 
+    const char *strings[] = { 
+        "(+ 1 1)", 
+        "(define x 1)",
+        "1", 
+        NULL
+    };
+    for (int i=0;strings[i] != NULL; i++)
+    {
+        printf("-------------start------------\n");
+        Object *p = read_all(strings[i]);
+        print(p);
+        printf("\n");
+        printf("parse tree\n");
+        // step2 parse
+        tokens = p;
+        Object *tree = parse();
+        print(tree);
+        printf("\n");
+        printf("done!\n");
+        // step3 eval
+        print(eval(tree, g_env));
+        printf("\n-------------end------------\n");
+    }
     return 0;
 }
+
+
