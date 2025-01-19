@@ -17,6 +17,7 @@ typedef struct _object{
         struct {
             struct _object *args;
             struct _object *body;
+            struct _object *env;
         }clos;
     } value;
 } Object;
@@ -241,7 +242,7 @@ Object *g_env;
 // step 3
 // eval
 Object* eval(Object*, Object*);
-Object* call_closure(Object *clo, Object* s_args, Object *env);
+Object* call_closure(Object *clo, Object* s_args);
 Object* eval_list(Object *s_list, Object *env)
 {
     Object *result = NIL_OBJECT;
@@ -249,7 +250,7 @@ Object* eval_list(Object *s_list, Object *env)
     // call fn
     if (fn->kind == CLOS)
     {
-        result = call_closure(fn, cdr(s_list), env);
+        result = call_closure(fn, cdr(s_list));
     }
     else if (fn->kind == C_FUNCTION)
     {
@@ -334,12 +335,13 @@ Object* get_value(Object *name, Object *env)
 }
 
 
-Object* call_closure(Object *clo, Object* s_args, Object *env)
+Object* call_closure(Object *clo, Object* s_args)
 {
     Object *local_env = cons(NIL_OBJECT, NIL_OBJECT);
     Object *p_clo_args = clo->value.clos.args;
     Object *p_s_args = s_args;
     Object *p_local = local_env;
+    Object *env = clo->value.clos.env;
     while(p_clo_args != NIL_OBJECT && p_s_args != NIL_OBJECT)
     {
         Object *local_name = car(p_clo_args);
@@ -390,6 +392,7 @@ Object* lambda(Object *s_args, Object *env)
     func_obj->kind = CLOS;
     func_obj->value.clos.args = car(s_args);
     func_obj->value.clos.body = car(cdr(s_args));
+    func_obj->value.clos.env = env;
     return func_obj;
 }
 
@@ -414,11 +417,11 @@ int main(int argc, char* argv[])
     register_c_function("lambda", lambda);
     // step1 read
     const char *strings[] = { 
-        "(define add (lambda (x y) (+ x y)))",
-        "(define x 5)",
-        "(define y 9)",
-        "(add x y)",
-        "((lambda (x y) (+ x y 5)) x y)",
+        "(define make-adder (lambda (x) (lambda (y) (+ x y))))",
+        "((make-adder 5) 2)",
+        "(define add5 (make-adder 5))",
+        "(add5 2)",
+        // "((lambda (x y) (+ x y 5)) x y)",
         NULL
     };
     for (int i=0;strings[i] != NULL; i++)
