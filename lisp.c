@@ -14,7 +14,10 @@ typedef struct _object{
             struct _object *car;
             struct _object *cdr;
         }cons;
-        struct _object *closure;
+        struct {
+            struct _object *args;
+            struct _object *body;
+        }clos;
     } value;
 } Object;
 
@@ -83,6 +86,8 @@ void print(Object* x){
         printf("%f", x->value.number);
     else if (x->kind == CONS)
         print_list(x);
+    else if (x->kind == CLOS)
+        printf("closure\n");
     else
         printf("unknown value\n");
 }
@@ -236,6 +241,7 @@ Object *g_env;
 // step 3
 // eval
 Object* eval(Object*, Object*);
+Object* call_closure(Object *clo, Object* s_args, Object *env);
 Object* eval_list(Object *s_list, Object *env)
 {
     Object *result = NIL_OBJECT;
@@ -243,7 +249,7 @@ Object* eval_list(Object *s_list, Object *env)
     // call fn
     if (fn->kind == CLOS)
     {
-
+        result = call_closure(fn, cdr(s_list), env);
     }
     else if (fn->kind == C_FUNCTION)
     {
@@ -328,6 +334,33 @@ Object* get_value(Object *name, Object *env)
 }
 
 
+Object* call_closure(Object *clo, Object* s_args, Object *env)
+{
+    Object *local_env = cons(NIL_OBJECT, NIL_OBJECT);
+    Object *p_clo_args = clo->value.clos.args;
+    Object *p_s_args = s_args;
+    Object *p_local = local_env;
+    while(p_clo_args != NIL_OBJECT && p_s_args != NIL_OBJECT)
+    {
+        Object *local_name = car(p_clo_args);
+        Object *local_value = eval(car(p_s_args), env);
+        set_value(local_name, local_value, local_env);
+        p_clo_args = cdr(p_clo_args);
+        p_s_args = cdr(p_s_args);
+    }
+    // cons local_env and upper env;
+    while(cdr(p_local)!=NIL_OBJECT)
+    {
+        p_local = cdr(p_local);
+    }
+    p_local->value.cons.cdr = cdr(env);
+    // eval
+    Object *result;
+    result = eval(clo->value.clos.body, local_env);
+    return result;
+}
+
+
 Object* define(Object *s_args, Object *env)
 {
     Object *name = car(s_args);
@@ -351,6 +384,15 @@ Object* add(Object *s_args, Object *env)
     return result_obj;
 }
 
+Object* lambda(Object *s_args, Object *env)
+{
+    Object *func_obj = new_object();
+    func_obj->kind = CLOS;
+    func_obj->value.clos.args = car(s_args);
+    func_obj->value.clos.body = car(cdr(s_args));
+    return func_obj;
+}
+
 
 void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
 {
@@ -369,14 +411,14 @@ int main(int argc, char* argv[])
     g_env = cons(NIL_OBJECT, NIL_OBJECT);
     register_c_function("define", define);
     register_c_function("+", add);
+    register_c_function("lambda", lambda);
     // step1 read
     const char *strings[] = { 
-        "(define x (+ 1 1))",
-        "(define y (+ 1 (+ 10 5)))",
-        // "1",
-        // "(define x 1.0)",
-        // "x", 
-        "(+ x 1)",
+        "(define add (lambda (x y) (+ x y)))",
+        "(define x 5)",
+        "(define y 9)",
+        "(add x y)",
+        "((lambda (x y) (+ x y 5)) x y)",
         NULL
     };
     for (int i=0;strings[i] != NULL; i++)
