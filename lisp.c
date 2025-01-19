@@ -4,12 +4,12 @@
 #include <assert.h>
 
 typedef struct _object{
-    enum {NUMB, ATOM, STRG, PRIM, CONS, CLOS, NIL} kind;
+    enum {NUMB, ATOM, STRG, PRIM, CONS, CLOS, C_FUNCTION, NIL} kind;
     union {
         double number;
         const char *atom;
         const char *string;
-        struct _object (*fn)(struct _object, struct _object);
+        struct _object* (*fn)(struct _object*, struct _object*);
         struct {
             struct _object *car;
             struct _object *cdr;
@@ -235,9 +235,21 @@ Object* parse()
 Object *g_env;
 // step 3
 // eval
+Object* eval(Object*, Object*);
 Object* eval_list(Object *s_list, Object *env)
 {
-    return NIL_OBJECT;  // TODO(LWG)
+    Object *result = NIL_OBJECT;
+    Object* fn = eval(car(s_list), env);
+    // call fn
+    if (fn->kind == CLOS)
+    {
+
+    }
+    else if (fn->kind == C_FUNCTION)
+    {
+        result = fn->value.fn(cdr(s_list), env);
+    }
+    return result;
 }
 
 
@@ -249,7 +261,7 @@ Object* eval_prim(Object *s, Object *env)
     int result;
     Object *o = NIL_OBJECT;
     // parse number;
-    if (sscanf(s->value.atom, "%lf", number)==1)
+    if (sscanf(s->value.atom, "%lf", &number)==1)
     {
         o = new_object();
         o->kind = NUMB;
@@ -316,9 +328,37 @@ Object* get_value(Object *name, Object *env)
 }
 
 
-void define(Object *name, Object *value)
+Object* define(Object *s_args, Object *env)
 {
-    set_value(name, value, g_env);
+    Object *name = car(s_args);
+    Object *val = eval(car(cdr(s_args)), env);
+    set_value(name, val, g_env);
+    return val;
+}
+
+Object* add(Object *s_args, Object *env)
+{
+    Object *p = s_args;
+    double result = 0;
+    for(p= s_args; p != NIL_OBJECT; p = cdr(p))
+    {
+        Object *value = eval(car(p), env);
+        result += value->value.number;
+    }
+    Object *result_obj = new_object();
+    result_obj->kind = NUMB;
+    result_obj->value.number = result;
+    return result_obj;
+}
+
+
+void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
+{
+    Object *f_obj = new_object();
+    Object *name_obj = atom((char*)name);
+    f_obj->kind = C_FUNCTION;
+    f_obj->value.fn = fn;
+    set_value(name_obj, f_obj, g_env);
 }
 
 
@@ -327,12 +367,16 @@ int main(int argc, char* argv[])
     // init
     NIL_OBJECT = make_nil();
     g_env = cons(NIL_OBJECT, NIL_OBJECT);
+    register_c_function("define", define);
+    register_c_function("+", add);
     // step1 read
-
     const char *strings[] = { 
-        "(+ 1 1)", 
-        "(define x 1)",
-        "1", 
+        "(define x (+ 1 1))",
+        "(define y (+ 1 (+ 10 5)))",
+        // "1",
+        // "(define x 1.0)",
+        // "x", 
+        "(+ x 1)",
         NULL
     };
     for (int i=0;strings[i] != NULL; i++)
