@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define MAX_LINE_LENGTH 1024
+#define N 1024
+
 typedef struct _object{
     enum {NUMB, ATOM, STRG, PRIM, CONS, CLOS, C_FUNCTION, NIL} kind;
     union {
@@ -22,8 +25,6 @@ typedef struct _object{
     } value;
 } Object;
 
-
-#define N 1024
 
 // region global value
 Object cell[N];
@@ -416,18 +417,16 @@ int main(int argc, char* argv[])
     register_c_function("+", add);
     register_c_function("lambda", lambda);
     // step1 read
-    const char *strings[] = { 
-        "(define make-adder (lambda (x) (lambda (y) (+ x y))))",
-        "((make-adder 5) 2)",
-        "(define add5 (make-adder 5))",
-        "(add5 2)",
-        // "((lambda (x y) (+ x y 5)) x y)",
-        NULL
-    };
-    for (int i=0;strings[i] != NULL; i++)
+    FILE *file = fopen("main.lisp", "r");
+    if (!file) {
+        perror("无法打开文件");
+        exit(EXIT_FAILURE);
+    }
+    char line[MAX_LINE_LENGTH];
+    while (fgets(line, sizeof(line), file))
     {
         printf("-------------start------------\n");
-        Object *p = read_all(strings[i]);
+        Object *p = read_all(line);
         print(p);
         printf("\n");
         printf("parse tree\n");
