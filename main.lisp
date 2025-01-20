@@ -2,3 +2,4 @@
 ((make-adder 5) 2)
 (define add5 (make-adder 5))
 (add5 100)
+(if (eq 1 2) 20 30)

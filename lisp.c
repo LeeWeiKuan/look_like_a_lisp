@@ -31,6 +31,7 @@ Object cell[N];
 int base = 0;
 int top = 0;
 Object* NIL_OBJECT;
+Object* TRU_OBJECT;
 // endregion
 
 
@@ -89,9 +90,9 @@ void print(Object* x){
     else if (x->kind == CONS)
         print_list(x);
     else if (x->kind == CLOS)
-        printf("closure\n");
+        printf("closure");
     else
-        printf("unknown value\n");
+        printf("unknown value");
 }
 
 void print_list(Object* x){
@@ -372,6 +373,18 @@ Object* f_define(Object *s_args, Object *env)
     return val;
 }
 
+
+Object* f_lambda(Object *s_args, Object *env)
+{
+    Object *func_obj = new_object();
+    func_obj->kind = CLOS;
+    func_obj->clos.args = car(s_args);
+    func_obj->clos.body = car(cdr(s_args));
+    func_obj->clos.env = env;
+    return func_obj;
+}
+
+
 Object* f_add(Object *s_args, Object *env)
 {
     Object *p = s_args;
@@ -387,14 +400,55 @@ Object* f_add(Object *s_args, Object *env)
     return result_obj;
 }
 
-Object* f_lambda(Object *s_args, Object *env)
+
+Object* f_minus(Object *s_args, Object *env)
 {
-    Object *func_obj = new_object();
-    func_obj->kind = CLOS;
-    func_obj->clos.args = car(s_args);
-    func_obj->clos.body = car(cdr(s_args));
-    func_obj->clos.env = env;
-    return func_obj;
+    Object *p = s_args;
+    double result = 0;
+    Object *o1 = eval(car(s_args), env);
+    Object *o2 = eval(car(cdr(s_args)), env);
+    assert(o1->kind == NUMB);
+    assert(o2->kind == NUMB);
+    result = o1->number - o2->number;
+    Object *result_obj = new_object();
+    result_obj->kind = NUMB;
+    result_obj->number = result;
+    return result_obj;
+}
+
+
+Object* f_eq(Object *s_args, Object *env)
+{
+    Object *result = NIL_OBJECT;
+    Object *o1 = eval(car(s_args), env);
+    Object *o2 = eval(car(cdr(s_args)), env);
+    if (o1->kind == o2->kind)
+    {
+        if (o1->kind == NUMB)
+        {
+            if (o1->number == o2->number)
+            {
+                result = TRU_OBJECT;
+            }
+        }
+        // todo: other kinds of objects?
+    }
+    return result;
+}
+
+Object* f_if(Object *s_args, Object *env)
+{
+    Object *if_val = eval(car(s_args), env);
+    Object *result = NIL_OBJECT;
+    if (if_val == TRU_OBJECT)
+    {
+        result = eval(car(cdr(s_args)), env);
+    }
+    else
+    {
+        result = eval(car(cdr(cdr(s_args))), env);
+    }
+    return result;
 }
 
 
@@ -413,10 +467,14 @@ typedef struct {
     Object* (*func)(Object *, Object *);
 } _builtin_item;
 
+
 static _builtin_item builtins[] = {
     {"define", f_define},
-    {"+", f_add},
     {"lambda", f_lambda},
+    {"+", f_add},
+    {"-", f_minus},
+    {"eq", f_eq},
+    {"if", f_if},
     {NULL, NULL}
 };
 
@@ -425,6 +483,7 @@ int main(int argc, char* argv[])
 {
     // init
     NIL_OBJECT = make_nil();
+    TRU_OBJECT = atom("#t");  // what make a tru object？ is it a special object?
     g_env = cons(NIL_OBJECT, NIL_OBJECT);
     for(int i=0; builtins[i].name != NULL; i++)
     {
@@ -439,20 +498,17 @@ int main(int argc, char* argv[])
     char line[MAX_LINE_LENGTH];
     while (fgets(line, sizeof(line), file))
     {
-        printf("-------------start------------\n");
+        // printf("-------------start------------\n");
         Object *p = read_all(line);
-        print(p);
-        printf("\n");
-        printf("parse tree\n");
-        // step2 parse
         tokens = p;
         Object *tree = parse();
+        printf(">>> ");
         print(tree);
         printf("\n");
-        printf("done!\n");
         // step3 eval
         print(eval(tree, g_env));
-        printf("\n-------------end------------\n");
+        printf("\n");
+        // printf("\n-------------end------------\n");
     }
     return 0;
 }
