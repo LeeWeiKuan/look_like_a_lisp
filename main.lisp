@@ -1,5 +1,2 @@
-(define make-adder (lambda (x) (lambda (y) (+ x y))))
-((make-adder 5) 2)
-(define add5 (make-adder 5))
-(add5 100)
-(if (eq 1 2) 20 30)
+(define fib-rec (lambda (n) (if (< n 2) n (+ (fib-rec (- n 1)) (fib-rec (- n 2))))))
+(fib-rec 10)

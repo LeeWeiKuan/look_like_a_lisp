@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #define MAX_LINE_LENGTH 1024
-#define N 1024
+#define N 4096
 
 typedef struct _object{
     enum {NUMB, ATOM, STRG, PRIM, CONS, CLOS, C_FUNCTION, NIL} kind;
@@ -244,7 +244,7 @@ Object *g_env;
 // step 3
 // eval
 Object* eval(Object*, Object*);
-Object* call_closure(Object *clo, Object* s_args);
+Object* call_closure(Object *clo, Object* s_args, Object* g_env);
 Object* eval_list(Object *s_list, Object *env)
 {
     Object *result = NIL_OBJECT;
@@ -252,7 +252,7 @@ Object* eval_list(Object *s_list, Object *env)
     // call fn
     if (fn->kind == CLOS)
     {
-        result = call_closure(fn, cdr(s_list));
+        result = call_closure(fn, cdr(s_list), env);
     }
     else if (fn->kind == C_FUNCTION)
     {
@@ -337,7 +337,7 @@ Object* get_value(Object *name, Object *env)
 }
 
 
-Object* call_closure(Object *clo, Object* s_args)
+Object* call_closure(Object *clo, Object* s_args, Object* g_env)
 {
     Object *local_env = cons(NIL_OBJECT, NIL_OBJECT);
     Object *p_clo_args = clo->clos.args;
@@ -347,7 +347,7 @@ Object* call_closure(Object *clo, Object* s_args)
     while(p_clo_args != NIL_OBJECT && p_s_args != NIL_OBJECT)
     {
         Object *local_name = car(p_clo_args);
-        Object *local_value = eval(car(p_s_args), env);
+        Object *local_value = eval(car(p_s_args), g_env);
         set_value(local_name, local_value, local_env);
         p_clo_args = cdr(p_clo_args);
         p_s_args = cdr(p_s_args);
@@ -417,6 +417,19 @@ Object* f_minus(Object *s_args, Object *env)
 }
 
 
+Object* f_less(Object *s_args, Object *env)
+{
+    Object *result = NIL_OBJECT;
+    Object *o1 = eval(car(s_args), env);
+    Object *o2 = eval(car(cdr(s_args)), env);
+    assert(o1->kind == NUMB);
+    assert(o2->kind == NUMB);
+    if (o1->number < o2->number)
+        result = TRU_OBJECT;
+    return result;
+}
+
+
 Object* f_eq(Object *s_args, Object *env)
 {
     Object *result = NIL_OBJECT;
@@ -473,6 +486,7 @@ static _builtin_item builtins[] = {
     {"lambda", f_lambda},
     {"+", f_add},
     {"-", f_minus},
+    {"<", f_less},
     {"eq", f_eq},
     {"if", f_if},
     {NULL, NULL}
