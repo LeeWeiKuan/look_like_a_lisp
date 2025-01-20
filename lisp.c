@@ -22,7 +22,7 @@ typedef struct _object{
             struct _object *body;
             struct _object *env;
         }clos;
-    } value;
+    };
 } Object;
 
 
@@ -49,26 +49,26 @@ Object* make_nil(){
 Object* atom(char* str){
     Object* x = new_object();
     x->kind = ATOM;
-    x->value.atom = str;
+    x->atom = str;
     return x;
 }
 
 Object* cons(Object* p1, Object* p2){
     Object* x = new_object();
     x->kind = CONS;
-    x->value.cons.car = p1;
-    x->value.cons.cdr = p2;
+    x->cons.car = p1;
+    x->cons.cdr = p2;
     return x;
 }
 
 Object* car(Object *x){
     assert(x->kind == CONS);
-    return x->value.cons.car;
+    return x->cons.car;
 }
 
 Object* cdr(Object *x){
     assert(x->kind == CONS);
-    return x->value.cons.cdr;
+    return x->cons.cdr;
 }
 
 // Object* quote(Object *x){
@@ -82,10 +82,10 @@ void print(Object* x){
         printf("()");
     else if (x->kind == ATOM)
     {
-        printf("%s", x->value.atom);
+        printf("%s", x->atom);
     }
     else if (x->kind == NUMB)
-        printf("%f", x->value.number);
+        printf("%f", x->number);
     else if (x->kind == CONS)
         print_list(x);
     else if (x->kind == CLOS)
@@ -158,7 +158,7 @@ int is_equal_atom(Object *x, Object *y)
 {
     if (x->kind != y -> kind) return 0;
     if (x->kind != ATOM) return 0;
-    return strcmp(x->value.atom, y->value.atom) == 0;
+    return strcmp(x->atom, y->atom) == 0;
 }
 
 
@@ -182,8 +182,8 @@ Object* read_all(const char *input_str)
             }
             else
             {
-                list->value.cons.cdr = new_cons;
-                list = list->value.cons.cdr;
+                list->cons.cdr = new_cons;
+                list = list->cons.cdr;
             }
         }
     }
@@ -219,8 +219,8 @@ Object* parse_list()
         }
         else
         {
-            p->value.cons.cdr = new_cons;
-            p = p->value.cons.cdr;
+            p->cons.cdr = new_cons;
+            p = p->cons.cdr;
         }
     }
     eat_token();
@@ -255,7 +255,7 @@ Object* eval_list(Object *s_list, Object *env)
     }
     else if (fn->kind == C_FUNCTION)
     {
-        result = fn->value.fn(cdr(s_list), env);
+        result = fn->fn(cdr(s_list), env);
     }
     return result;
 }
@@ -269,11 +269,11 @@ Object* eval_prim(Object *s, Object *env)
     int result;
     Object *o = NIL_OBJECT;
     // parse number;
-    if (sscanf(s->value.atom, "%lf", &number)==1)
+    if (sscanf(s->atom, "%lf", &number)==1)
     {
         o = new_object();
         o->kind = NUMB;
-        o->value.number = number;
+        o->number = number;
         return o;
     }
     // get env value
@@ -303,9 +303,9 @@ void set_value(Object *name, Object *value, Object *env)
     for(p = env; cdr(p) != NIL_OBJECT; p = cdr(p))
     {
         Object *item = car(cdr(p));
-        if (strcmp(name->value.atom, car(item)->value.atom) == 0)
+        if (strcmp(name->atom, car(item)->atom) == 0)
         {
-            item->value.cons.cdr = value;
+            item->cons.cdr = value;
             is_found = 1;
             break;
         }
@@ -313,7 +313,7 @@ void set_value(Object *name, Object *value, Object *env)
     if (!is_found)
     {
         Object *new_item = cons(name, value);
-        p->value.cons.cdr = cons(new_item, NIL_OBJECT);
+        p->cons.cdr = cons(new_item, NIL_OBJECT);
     }
 }
 
@@ -326,7 +326,7 @@ Object* get_value(Object *name, Object *env)
     for(p = cdr(env); p != NIL_OBJECT; p = cdr(p))
     {
         Object *item = car(p);
-        if (strcmp(name->value.atom, car(item)->value.atom) == 0)
+        if (strcmp(name->atom, car(item)->atom) == 0)
         {
             o = cdr(item);
             break;
@@ -339,10 +339,10 @@ Object* get_value(Object *name, Object *env)
 Object* call_closure(Object *clo, Object* s_args)
 {
     Object *local_env = cons(NIL_OBJECT, NIL_OBJECT);
-    Object *p_clo_args = clo->value.clos.args;
+    Object *p_clo_args = clo->clos.args;
     Object *p_s_args = s_args;
     Object *p_local = local_env;
-    Object *env = clo->value.clos.env;
+    Object *env = clo->clos.env;
     while(p_clo_args != NIL_OBJECT && p_s_args != NIL_OBJECT)
     {
         Object *local_name = car(p_clo_args);
@@ -356,10 +356,10 @@ Object* call_closure(Object *clo, Object* s_args)
     {
         p_local = cdr(p_local);
     }
-    p_local->value.cons.cdr = cdr(env);
+    p_local->cons.cdr = cdr(env);
     // eval
     Object *result;
-    result = eval(clo->value.clos.body, local_env);
+    result = eval(clo->clos.body, local_env);
     return result;
 }
 
@@ -379,11 +379,11 @@ Object* f_add(Object *s_args, Object *env)
     for(p= s_args; p != NIL_OBJECT; p = cdr(p))
     {
         Object *value = eval(car(p), env);
-        result += value->value.number;
+        result += value->number;
     }
     Object *result_obj = new_object();
     result_obj->kind = NUMB;
-    result_obj->value.number = result;
+    result_obj->number = result;
     return result_obj;
 }
 
@@ -391,9 +391,9 @@ Object* f_lambda(Object *s_args, Object *env)
 {
     Object *func_obj = new_object();
     func_obj->kind = CLOS;
-    func_obj->value.clos.args = car(s_args);
-    func_obj->value.clos.body = car(cdr(s_args));
-    func_obj->value.clos.env = env;
+    func_obj->clos.args = car(s_args);
+    func_obj->clos.body = car(cdr(s_args));
+    func_obj->clos.env = env;
     return func_obj;
 }
 
@@ -403,7 +403,7 @@ void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
     Object *f_obj = new_object();
     Object *name_obj = atom((char*)name);
     f_obj->kind = C_FUNCTION;
-    f_obj->value.fn = fn;
+    f_obj->fn = fn;
     set_value(name_obj, f_obj, g_env);
 }
 
