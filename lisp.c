@@ -364,7 +364,7 @@ Object* call_closure(Object *clo, Object* s_args)
 }
 
 
-Object* define(Object *s_args, Object *env)
+Object* f_define(Object *s_args, Object *env)
 {
     Object *name = car(s_args);
     Object *val = eval(car(cdr(s_args)), env);
@@ -372,7 +372,7 @@ Object* define(Object *s_args, Object *env)
     return val;
 }
 
-Object* add(Object *s_args, Object *env)
+Object* f_add(Object *s_args, Object *env)
 {
     Object *p = s_args;
     double result = 0;
@@ -387,7 +387,7 @@ Object* add(Object *s_args, Object *env)
     return result_obj;
 }
 
-Object* lambda(Object *s_args, Object *env)
+Object* f_lambda(Object *s_args, Object *env)
 {
     Object *func_obj = new_object();
     func_obj->kind = CLOS;
@@ -408,18 +408,32 @@ void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
 }
 
 
+typedef struct {
+    const char *name;
+    Object* (*func)(Object *, Object *);
+} _builtin_item;
+
+static _builtin_item builtins[] = {
+    {"define", f_define},
+    {"+", f_add},
+    {"lambda", f_lambda},
+    {NULL, NULL}
+};
+
+
 int main(int argc, char* argv[])
 {
     // init
     NIL_OBJECT = make_nil();
     g_env = cons(NIL_OBJECT, NIL_OBJECT);
-    register_c_function("define", define);
-    register_c_function("+", add);
-    register_c_function("lambda", lambda);
+    for(int i=0; builtins[i].name != NULL; i++)
+    {
+        register_c_function(builtins[i].name, builtins[i].func);
+    }
     // step1 read
     FILE *file = fopen("main.lisp", "r");
     if (!file) {
-        perror("无法打开文件");
+        perror("open file error");
         exit(EXIT_FAILURE);
     }
     char line[MAX_LINE_LENGTH];
