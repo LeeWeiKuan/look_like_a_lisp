@@ -449,6 +449,15 @@ Object* f_eq(Object *s_args, Object *env)
     return result;
 }
 
+Object* f_cons(Object *s_args, Object *env)
+{
+    Object *result = NIL_OBJECT;
+    Object *o1 = eval(car(s_args), env);
+    Object *o2 = eval(car(cdr(s_args)), env);
+    result = cons(o1, o2);
+    return result;
+}
+
 Object* f_if(Object *s_args, Object *env)
 {
     Object *if_val = eval(car(s_args), env);
@@ -489,6 +498,7 @@ static _builtin_item builtins[] = {
     {"<", f_less},
     {"eq", f_eq},
     {"if", f_if},
+    {"cons", f_cons},
     {NULL, NULL}
 };
 
