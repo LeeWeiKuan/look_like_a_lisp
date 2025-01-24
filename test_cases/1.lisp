@@ -1,0 +1,5 @@
+(define x 1)
+(define y 2)
+(define z 3)
+(define add (lambda (x) (+ x 10)))
+(((lambda (x y) (lambda (x) (+ (add x) y z))) 4 5) 6)
