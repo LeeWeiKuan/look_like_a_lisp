@@ -417,6 +417,39 @@ Object* f_minus(Object *s_args, Object *env)
 }
 
 
+Object* f_mul(Object *s_args, Object *env)
+{
+    Object *p = s_args;
+    double result = 0;
+    Object *o1 = eval(car(s_args), env);
+    Object *o2 = eval(car(cdr(s_args)), env);
+    assert(o1->kind == NUMB);
+    assert(o2->kind == NUMB);
+    result = o1->number * o2->number;
+    Object *result_obj = new_object();
+    result_obj->kind = NUMB;
+    result_obj->number = result;
+    return result_obj;
+}
+
+
+Object* f_div(Object *s_args, Object *env)
+{
+    Object *p = s_args;
+    double result = 0;
+    Object *o1 = eval(car(s_args), env);
+    Object *o2 = eval(car(cdr(s_args)), env);
+    assert(o1->kind == NUMB);
+    assert(o2->kind == NUMB);
+    assert(o2->number != 0.0);
+    result = o1->number / o2->number;
+    Object *result_obj = new_object();
+    result_obj->kind = NUMB;
+    result_obj->number = result;
+    return result_obj;
+}
+
+
 Object* f_less(Object *s_args, Object *env)
 {
     Object *result = NIL_OBJECT;
@@ -458,6 +491,27 @@ Object* f_cons(Object *s_args, Object *env)
     return result;
 }
 
+
+Object* f_car(Object *s_args, Object *env)
+{
+    Object *result = NIL_OBJECT;
+    Object *o = eval(car(s_args), env);
+    assert(o->kind==CONS);
+    result = car(o);
+    return result;
+}
+
+
+Object* f_cdr(Object *s_args, Object *env)
+{
+    Object *result = NIL_OBJECT;
+    Object *o = eval(car(s_args), env);
+    assert(o->kind==CONS);
+    result = cdr(o);
+    return result;
+}
+
+
 Object* f_if(Object *s_args, Object *env)
 {
     Object *if_val = eval(car(s_args), env);
@@ -495,10 +549,14 @@ static _builtin_item builtins[] = {
     {"lambda", f_lambda},
     {"+", f_add},
     {"-", f_minus},
+    {"*", f_mul},
+    {"/", f_div},
     {"<", f_less},
     {"eq", f_eq},
     {"if", f_if},
     {"cons", f_cons},
+    {"car", f_car},
+    {"cdr", f_cdr},
     {NULL, NULL}
 };
 
