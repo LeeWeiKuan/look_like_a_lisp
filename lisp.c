@@ -228,10 +228,20 @@ Object* parse_list()
     return list;
 }
 
+Object* parse_quote()
+{
+    eat_token();
+    return cons(atom("'"), cons(parse(), NIL_OBJECT));
+}
+
 Object* parse()
 {
     if (is_equal_atom(get_token(), atom("(")))
         return parse_list();
+    else if (is_equal_atom(get_token(), atom("'")))
+    {
+        return parse_quote();
+    }
     else
     {
         Object *r = get_token();
@@ -579,6 +589,19 @@ Object* f_cond(Object* s_args, Object* env)
     return result;
 }
 
+
+Object* f_quote(Object* s_args, Object* env)
+{
+    return car(s_args);
+}
+
+
+Object* f_eval(Object* s_args, Object* env)
+{
+    return eval(eval(car(s_args), env), env);
+}
+
+
 void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
 {
     Object *f_obj = new_object();
@@ -612,6 +635,8 @@ static _builtin_item builtins[] = {
     {"and", f_and},
     {"not", f_not},
     {"cond", f_cond},
+    {"'", f_quote},
+    {"eval", f_eval},
     {NULL, NULL}
 };
 
