@@ -527,6 +527,41 @@ Object* f_if(Object *s_args, Object *env)
     return result;
 }
 
+Object* f_or(Object* s_args, Object* env)
+{
+    Object *result = eval(car(s_args), env);
+    if (result == NIL_OBJECT)
+    {
+        result = eval(car(cdr(s_args)), env);
+    }
+    return result;
+}
+
+
+Object* f_and(Object* s_args, Object* env)
+{
+    Object *result = eval(car(s_args), env);
+    if (result != NIL_OBJECT)
+    {
+        result = eval(car(cdr(s_args)), env);
+    }
+    return result;
+}
+
+
+Object* f_not(Object* s_args, Object* env)
+{
+    Object *result = eval(car(s_args), env);
+    if (result == NIL_OBJECT)
+    {
+        result = TRU_OBJECT;
+    }
+    else
+    {
+        result = NIL_OBJECT;
+    }
+    return result;
+}
 
 void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
 {
@@ -554,6 +589,9 @@ static _builtin_item builtins[] = {
     {"<", f_less},
     {"eq", f_eq},
     {"if", f_if},
+    {"or", f_or},
+    {"and", f_and},
+    {"not", f_not},
     {"cons", f_cons},
     {"car", f_car},
     {"cdr", f_cdr},
@@ -567,6 +605,7 @@ int main(int argc, char* argv[])
     NIL_OBJECT = make_nil();
     TRU_OBJECT = atom("#t");  // what make a tru object？ is it a special object?
     g_env = cons(NIL_OBJECT, NIL_OBJECT);
+    // set_value("nil", NIL_OBJECT, g_env);
     for(int i=0; builtins[i].name != NULL; i++)
     {
         register_c_function(builtins[i].name, builtins[i].func);
