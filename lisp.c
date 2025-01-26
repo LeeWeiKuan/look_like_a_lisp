@@ -602,6 +602,30 @@ Object* f_eval(Object* s_args, Object* env)
 }
 
 
+Object* f_let(Object* s_args, Object* env)
+{
+    Object *p;
+    Object *p_local;
+    p = s_args;
+    Object *local_env = cons(NIL_OBJECT, NIL_OBJECT);
+    while (cdr(p)!=NIL_OBJECT)
+    {
+        //local value
+        Object *local_name = car(car(p));
+        Object *local_value = eval(car(cdr(car(p))), env);
+        set_value(local_name, local_value, local_env);
+        p = cdr(p);
+    }
+    p_local = local_env;
+    while(cdr(p_local)!=NIL_OBJECT)
+    {
+        p_local = cdr(p_local);
+    }
+    p_local->cons.cdr = cdr(env);
+    return eval(car(p), local_env);
+}
+
+
 void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
 {
     Object *f_obj = new_object();
@@ -637,6 +661,7 @@ static _builtin_item builtins[] = {
     {"cond", f_cond},
     {"'", f_quote},
     {"eval", f_eval},
+    {"let", f_let},
     {NULL, NULL}
 };
 
