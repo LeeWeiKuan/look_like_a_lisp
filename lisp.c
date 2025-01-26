@@ -563,6 +563,22 @@ Object* f_not(Object* s_args, Object* env)
     return result;
 }
 
+
+Object* f_cond(Object* s_args, Object* env)
+{
+    Object *p = s_args;
+    while(p != NIL_OBJECT && eval(car(car(p)), env) == NIL_OBJECT)
+    {
+        p = cdr(p);
+    }
+    Object *result = NIL_OBJECT;
+    if(p != NIL_OBJECT)
+    {
+        result = eval(car(cdr(car(p))), env);
+    }
+    return result;
+}
+
 void register_c_function(const char *name, Object* (*fn)(Object*, Object*))
 {
     Object *f_obj = new_object();
@@ -582,6 +598,9 @@ typedef struct {
 static _builtin_item builtins[] = {
     {"define", f_define},
     {"lambda", f_lambda},
+    {"cons", f_cons},
+    {"car", f_car},
+    {"cdr", f_cdr},
     {"+", f_add},
     {"-", f_minus},
     {"*", f_mul},
@@ -592,9 +611,7 @@ static _builtin_item builtins[] = {
     {"or", f_or},
     {"and", f_and},
     {"not", f_not},
-    {"cons", f_cons},
-    {"car", f_car},
-    {"cdr", f_cdr},
+    {"cond", f_cond},
     {NULL, NULL}
 };
 
