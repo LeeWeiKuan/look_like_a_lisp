@@ -487,7 +487,13 @@ Object* f_eq(Object *s_args, Object *env)
                 result = TRU_OBJECT;
             }
         }
-        // todo: other kinds of objects?
+        else if (o1->kind == ATOM)
+        {
+            if (strcmp(o1->atom, o2->atom) == 0)
+            {
+                result = TRU_OBJECT;
+            }
+        }
     }
     return result;
 }
